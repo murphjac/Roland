@@ -1,20 +1,32 @@
-// rMain.cpp : Defines the entry point for the console application.
-// Author: jmurphy
-// Created: October 26, 2014, 10:58 PM PST
-//
-// Referenced from "Creating Win32 Applications (C++)" on MSDN (Oct 26, 14)
-
-#include <Windows.h>
-#include <stdlib.h>
-#include <string.h>
-#include <tchar.h>
-
-#include <d2d1.h>       // Direct2D for Win7 + earlier
+/* rMain.cpp : Defines the entry point for the console application.
+ * Author: jmurphy
+ * Created: October 26, 2014, 10:58 PM PST
+ *
+ * Referenced from:
+ * "Creating Win32 Applications (C++)" on MSDN (Oct 26, 14)
+ * "Direct2D QuickStart" on MSDN (Oct 29, 14)
+ *
+ */
 
 /*******************
  * Program Toggles *
  *******************/
 //#define HELLO_WORLD
+#define USE_DIRECT2D_DEMO_APP
+
+/************
+ * Includes *
+*************/
+#include <Windows.h>
+#include <stdlib.h>
+#include <string.h>
+#include <tchar.h>
+
+#include <d2d1.h>           // Direct2D for Win7 + earlier
+
+#ifdef USE_DIRECT2D_DEMO_APP
+#include "rD2DDemoApp.cpp"  // Used for Direct2D demo application
+#endif
 
 /********************
  * Global Variables *
@@ -53,6 +65,30 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	LPSTR lpCmdLine,
 	int nCmdShow)
 {
+#ifdef USE_DIRECT2D_DEMO_APP
+    /* Use HeapSetInformation to specify that the process should terminate
+     * if the heap manager detects an error in any heap used by the process.
+     * The return value is ignored, because we want to continue running
+     * in the unlikely event that HeapSetInformation fails.
+     */
+    HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+
+    if(SUCCEEDED(CoInitialize(NULL)))
+    {
+        {
+            DemoApp app;
+
+            if (SUCCEEDED(app.Initialize()))
+            {
+                app.RunMessageLoop();
+            }
+        }
+        CoUninitialize();
+    }
+
+    return 0;
+
+#else
     // This structure contains information about the window we'll be creating.
 	WNDCLASSEX wcex;
 
@@ -144,6 +180,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
     }
 
     return (int) msg.wParam;
+#endif
 }
 
 /*
