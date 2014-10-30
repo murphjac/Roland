@@ -9,6 +9,13 @@
 #include <string.h>
 #include <tchar.h>
 
+#include <d2d1.h>       // Direct2D for Win7 + earlier
+
+/*******************
+ * Program Toggles *
+ *******************/
+//#define HELLO_WORLD
+
 /********************
  * Global Variables *
  ********************/
@@ -27,6 +34,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine,
 	int nCmdShow);
+
 
 /*********************
  * Run-time Routines *
@@ -149,23 +157,94 @@ int WINAPI WinMain(HINSTANCE hInstance,
  */
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+#ifdef HELLO_WORLD
     PAINTSTRUCT ps;
     HDC hdc;
     TCHAR greeting[] = _T("Hello, World!");
+#endif
+
+    /* Example Direct 2D application - Drawing a simple rectangle
+        * Reference: "Direct2D QuickStart" on MSDN
+        */
+    HRESULT hr;
+    ID2D1Factory * pD2DFactory = NULL;
+    ID2D1HwndRenderTarget * pRT = NULL;
+    ID2D1SolidColorBrush * pBlackBrush = NULL;
 
     switch (message)
     {
     case WM_PAINT:
+        
+        // Create a Direct2D Factory, which is used to create Direct2D resources
+        hr = D2D1CreateFactory(
+            D2D1_FACTORY_TYPE_SINGLE_THREADED,
+            &pD2DFactory
+            );
+
+        // Obtain the size of the drawing area
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+
+        // Create a Direct2D render target (pRT - "pointer to Render Target")
+        hr = pD2DFactory->CreateHwndRenderTarget(
+            D2D1::RenderTargetProperties(),
+            D2D1::HwndRenderTargetProperties(
+                hWnd,
+                D2D1::SizeU( (rc.right - rc.left), (rc.bottom - rc.top) )
+            ),
+            &pRT
+        );
+
+        // Create a brush, using our render target
+        if (SUCCEEDED(hr))
+        {
+            pRT->CreateSolidColorBrush(
+                D2D1::ColorF(D2D1::ColorF::PaleVioletRed),
+                &pBlackBrush);
+        }
+
+        // Draw the rectangle
+        pRT->BeginDraw();
+
+        pRT->DrawRectangle(
+            D2D1::RectF(
+                rc.left   + 100.0f,
+                rc.top    + 100.0f,
+                rc.right  - 100.0f,
+                rc.bottom - 100.0f),
+            pBlackBrush);
+
+        hr = pRT->EndDraw();
+
+        // Release resources
+        if (pBlackBrush)
+        {
+            pBlackBrush->Release();
+        }
+        if (pD2DFactory)
+        {
+            pD2DFactory->Release();
+        }
+
+#ifdef HELLO_WORLD
+        /* Win32 application tour */
         hdc = BeginPaint(hWnd, &ps);
 
         /* Here, your application is laid out.
          * For this introduction, we just print out "Hello, World!"
          * in the top left corner.
          */
-        TextOut(hdc, 5, 5, greeting, _tcslen(greeting));
+        TextOut(
+            hdc, 
+            rc.left + ((rc.right - rc.left) / 2.0f) - 50.0f,
+            rc.top  + ((rc.bottom - rc.top) / 2.0f),
+            greeting, 
+            _tcslen(greeting)
+            );
         // End application specific layout section.
 
         EndPaint(hWnd, &ps);
+#endif
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
