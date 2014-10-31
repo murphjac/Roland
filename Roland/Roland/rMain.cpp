@@ -25,7 +25,7 @@
 #include <d2d1.h>           // Direct2D for Win7 + earlier
 
 #ifdef USE_DIRECT2D_DEMO_APP
-#include "rD2DDemoApp.cpp"  // Used for Direct2D demo application
+#include "rD2DDemoApp.h"  // Used for Direct2D demo application
 #endif
 
 /********************
